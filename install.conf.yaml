@@ -1,0 +1,20 @@
+- defaults:
+  link:
+    create: true
+    force: true
+    relink: true
+
+  clean: ['~']
+
+# Shell Config
+- link:
+    ~/.zshenv: zsh/.zshenv
+    ~/.zsh/.zshrc: zsh/.zshrc
+    ~/.zsh/.zprofile: zsh/.zprofile
+    ~/.zsh/.zsh_aliases: zsh/.zsh_aliases
+    ~/.zsh/plugins: zsh/plugins
+    ~/.zsh/themes: zsh/themes
+    ~/.zsh/.config/starship.toml: config/starship.toml
+
+- shell:
+  - [git submodule update --init --recursive, Installing submodules]

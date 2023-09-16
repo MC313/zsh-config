@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -e
+
+CONFIG="install.conf.yaml"
+DOTBOT_DIR="dotbot"
+
+DOTBOT_BIN="bin/dotbot"
+BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+cd "${BASEDIR}"
+git -C "${DOTBOT_DIR}" submodule sync --quiet --recursive
+git submodule update --init --recursive "${DOTBOT_DIR}"
+
+"${BASEDIR}/${DOTBOT_DIR}/${DOTBOT_BIN}" -d "${BASEDIR}" -c "${CONFIG}" "${@}"
+
+# Function to display a basic progress meter
+show_progress() {
+    echo -n "["
+    for i in $(seq 1 50); do
+        if [ "$1" -ge "$i" ]; then
+            echo -n "#"
+        else
+            echo -n " "
+        fi
+    done
+    echo -n "]"
+    echo
+}
+
+# Check and install Starship
+echo "Checking for Starship..."
+if ! command -v starship &> /dev/null; then
+    echo "Starship not found. Installing..."
+    show_progress 25
+    curl -fsSL https://starship.rs/install.sh | sh
+    show_progress 50
+
+    # Check if Starship was installed successfully
+    if command -v starship &> /dev/null; then
+        echo "Starship installed successfully!!"
+    else
+        echo "There was an error installing Starship."
+    fi
+else
+    show_progress 50
+    echo "Starship is already installed."
+fi
