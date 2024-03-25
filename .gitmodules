@@ -1,18 +1,16 @@
 [submodule "dotbot"]
 	path = dotbot
 	url = https://github.com/anishathalye/dotbot
+	ignore = dirty
 
-[submodule "plugins/zsh-autosuggestions"]
-	path = ~/.zsh/plugins/zsh-autosuggestions
+[submodule "zsh/plugins/zsh-autosuggestions"]
+	path = zsh/plugins/zsh-autosuggestions
 	url = https://github.com/zsh-users/zsh-autosuggestions
 
-[submodule "plugins/fast-syntax-highlighting"]
-	path = ~/.zsh/plugins/fast-syntax-highlighting
+[submodule "zsh/plugins/fast-syntax-highlighting"]
+	path = zsh/plugins/fast-syntax-highlighting
 	url = https://github.com/z-shell/F-Sy-H
 
-[submodule "plugins/zsh-completions"]
-	path = ~/.zsh/plugins/zsh-completions
-	url =   https://github.com/zsh-users/zsh-completions.git
-
-[submodule "dotbot"]
-	ignore = dirty
+[submodule "zsh/plugins/zsh-completions"]
+	path = zsh/plugins/zsh-completions
+	url = https://github.com/zsh-users/zsh-completions.git
