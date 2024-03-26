@@ -6,6 +6,15 @@
 
   clean: ['~']
 
+- shell:
+  -
+    description: Installing zsh
+    command: sudo apt -y update && sudo apt -y install zsh 
+    stdout: true
+  -
+    description:  Making zsh the default shell
+    command: zsh
+
 # Shell Config
 - link:
     ~/.zshenv: zsh/.zshenv
@@ -20,6 +29,3 @@
     description: Installing submodules
     command: git submodule update --init --recursive
     stdout: true
-  # -
-  #   description:  Making zsh the default shell
-  #   command: chsh -s $(which zsh)
