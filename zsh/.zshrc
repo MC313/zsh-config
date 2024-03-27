@@ -24,6 +24,8 @@ export SAVEHIST=10000
 setopt HIST_IGNORE_SPACE
 # Removes any excvess blanks that mean nothing to the shell.
 setopt HIST_REDUCE_BLANKS
+# delete duplicates first when HISTFILE size exceeds HISTSIZE.
+setopt HIST_EXPIRE_DUPS_FIRST
 # History won't save duplicates.
 setopt HIST_IGNORE_ALL_DUPS
 # History won't show duplicates on search.

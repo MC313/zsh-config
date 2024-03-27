@@ -30,6 +30,46 @@ show_progress() {
     echo
 }
 
+# Function to install zsh
+install_zsh() {
+    # Detect package manager and install zsh
+    if [ "$(uname)" = "Linux" ]; then
+        sudo apt update && sudo apt install zsh -y
+    elif [ "$(uname)" = "Darwin" ]; then
+        brew install zsh
+    else
+        echo "Unsupported operating system for automatic installation."
+        return 1
+    fi
+}
+
+# Function to set zsh as the default shell
+set_default_shell_zsh() {
+    ZSH_PATH=$(which zsh)
+    if [ -n "$ZSH_PATH" ]; then
+        echo "Setting zsh as the default shell. You might need to enter your password."
+        chsh -s "$ZSH_PATH"
+    else
+        echo "zsh installed, but couldn't set it as default. Please set it manually."
+        return 1
+    fi
+}
+
+# Check if zsh is installed
+if command -v zsh >/dev/null; then
+    show_progress 25
+    echo "zsh is already installed. Attempting to set as default shell..."
+    show_progress 50
+    set_default_shell_zsh
+else
+    echo "zsh is not installed. Attempting to install and set as default shell..."
+    show_progress 25
+    install_zsh && set_default_shell_zsh
+    show_progress 50
+    echo "zsh installed and set as the default shell successfully!!"
+    echo "You may need to logout and log back in for shell changes to take effect"
+fi
+
 # Check and install Starship
 echo "Checking for Starship..."
 if ! command -v starship &> /dev/null; then
