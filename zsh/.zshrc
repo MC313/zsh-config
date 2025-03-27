@@ -11,6 +11,7 @@ source ~/.zshenv
 ### ---- plugin config  -------------------------------------------
 source ~/.zsh/plugins/fast-syntax-highlighting/F-Sy-H.plugin.zsh
 source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source ~/.zsh/plugins/zsh-auto-pnpm-use/zsh-auto-pnpm-use.plugin.zsh
 fpath=(~/.zsh/plugins/zsh-completions/src $fpath)
 autoload -Uz compinit; compinit; _comp_options+=(globdots)
 

@@ -69,22 +69,3 @@ else
     echo "zsh installed and set as the default shell successfully!!"
     echo "You may need to logout and log back in for shell changes to take effect"
 fi
-
-# Check and install Starship
-echo "Checking for Starship..."
-if ! command -v starship &> /dev/null; then
-    echo "Starship not found. Installing..."
-    show_progress 25
-    curl -fsSL https://starship.rs/install.sh | sh
-    show_progress 50
-
-    # Check if Starship was installed successfully
-    if command -v starship &> /dev/null; then
-        echo "Starship installed successfully!!"
-    else
-        echo "There was an error installing Starship."
-    fi
-else
-    show_progress 50
-    echo "Starship is already installed."
-fi

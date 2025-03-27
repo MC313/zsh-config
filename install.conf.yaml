@@ -16,7 +16,77 @@
     ~/.zsh/.config/starship.toml: config/starship.toml
 
 - shell:
-  -
-    description: Installing submodules
-    command: git submodule update --init --recursive
-    stdout: true
+
+    - description: Install zsh and set it as the default shell
+      command: |
+        if command -v zsh >/dev/null; then
+            echo "zsh is already installed. Attempting to set as default shell..."
+            ZSH_PATH=$(which zsh)
+            if [ -n "$ZSH_PATH" ]; then
+                echo "Setting zsh as the default shell. You might need to enter your password."
+                chsh -s "$ZSH_PATH"
+            else
+                echo "zsh installed, but couldn't set it as default. Please set it manually."
+            fi
+        else
+            echo "zsh is not installed. Attempting to install and set as default shell..."
+            if [ "$(uname)" = "Linux" ]; then
+                sudo apt update && sudo apt install zsh -y
+            elif [ "$(uname)" = "Darwin" ]; then
+                brew install zsh
+            else
+                echo "Unsupported operating system for automatic installation."
+                exit 1
+            fi
+
+            ZSH_PATH=$(which zsh)
+            if [ -n "$ZSH_PATH" ]; then
+                echo "Setting zsh as the default shell. You might need to enter your password."
+                chsh -s "$ZSH_PATH"
+                echo "zsh installed and set as the default shell successfully!!"
+                echo "You may need to logout and log back in for shell changes to take effect."
+            else
+                echo "zsh installed, but couldn't set it as default. Please set it manually."
+            fi
+        fi
+
+    - description: Installing submodules
+      command: git submodule update --init --recursive
+      stdout: true
+
+    - description: Installing starship
+      command: curl -fsSL https://starship.rs/install.sh | sh
+      stdout: true
+
+    - description: Configuring Git - Sensible Defaults
+      command: |
+        git config --global branch.sort -committerdate
+        git config --global column.ui auto
+        git config --global diff.algorithm histogram
+        git config --global diff.colorMoved plain
+        git config --global diff.mnemonicPrefix true
+        git config --global diff.renames true
+        git config --global fetch.all true
+        git config --global fetch.prune true
+        git config --global fetch.pruneTags true
+        git config --global init.defaultBranch main
+        git config --global pull.rebase true
+        git config --global push.autoSetupRemote true
+        git config --global push.default simple
+        git config --global push.followTags true
+        git config --global tag.sort version:refname
+
+    - description: Configuring Git - Preferences
+      command: |
+        git config --global commit.verbose true
+        git config --global core.excludesfile ~/.gitignore
+        git config --global help.autocorrect prompt
+        git config --global rebase.autoSquash true
+        git config --global rebase.autoStash true
+        git config --global rebase.updateRefs true
+        git config --global rerere.enabled true
+        git config --global rerere.autoupdate true
+
+    - description: Configuring Git - Aliases
+      command: |
+        git config --global alias.fpush "push --force-with-lease"

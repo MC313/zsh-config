@@ -1,13 +1,12 @@
+# Cursor
+alias cursor="~/Applications/cursor/squashfs-root/AppRun"
+
 # Unix
-alias ls="ls -a"
 alias mkdir="mkdir -p"
+
+# NodeJS vidToGif
+alias togif="node ~/Dev/video-to-gif/run.js"
 
 # Python3
 alias py3="python3"
 alias p3="pip3"
-
-# URL Encode/Decode
-alias urldecode='python3 -c "import sys, urllib.parse as ul; \
-    print(ul.unquote_plus(sys.argv[1]))"'
-alias urlencode='python3 -c "import sys, urllib.parse as ul; \
-    print (ul.quote_plus(sys.argv[1]))"'
