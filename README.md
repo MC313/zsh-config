@@ -13,7 +13,7 @@ The main purpose of this project is to:
 
 1. Clone the repository:
    ```
-   git clone <repository-url>
+   git clone https://github.com/MC313/zsh-config.git
    cd zsh-config
    ```
 
@@ -51,13 +51,14 @@ When you run the install script, the following will be set up:
    - `.zshrc` file
    - `.zsh_aliases` file
    - Zsh plugins:
+     - zsh-auto-pnpm-use
      - zsh-autosuggestions
      - fast-syntax-highlighting
      - zsh-completions
 
 2. Starship prompt
 
-3. Git configuration (if included in the dotfiles)
+3. Git configuration
 
 4. Any other dotfiles specified in the `install.conf.yaml` file
 
