@@ -11,9 +11,10 @@ source ~/.zshenv
 ### ---- plugin config  -------------------------------------------
 source ~/.zsh/plugins/fast-syntax-highlighting/F-Sy-H.plugin.zsh
 source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-source ~/.zsh/plugins/zsh-auto-pnpm-use/zsh-auto-pnpm-use.plugin.zsh
+source ~/.zsh/plugins/pnpm-auto-use.plugin.zsh
 fpath=(~/.zsh/plugins/zsh-completions/src $fpath)
 autoload -Uz compinit; compinit; _comp_options+=(globdots)
+autoload -U +X bashcompinit && bashcompinit
 
 ### ---- history config ------------------------------------------
 export HISTFILE=~/.zsh/.zsh_history
@@ -48,3 +49,28 @@ setopt AUTO_CD
 ### ---- prompt config --------------------------------------------
 # PROMPT config is handled by Starship shell
 eval "$(starship init zsh)"
+
+# Cursor AI IDE launcher function
+# function cursor() {
+#     local args=""
+#     if [ $# -eq 0 ]; then
+#         args=$(pwd)
+#     else
+#         for arg in "$@"; do
+#             args="$args $arg"
+#         done
+#     fi
+#     (nohup $HOME/Applications/cursor/squashfs-root/AppRun --no-sandbox "$args" >/dev/null 2>&1 &)
+# }
+# export PATH="$HOME/.local/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/home/malcolm/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+
+# opencode
+export PATH=/home/malcolm/.opencode/bin:$PATH

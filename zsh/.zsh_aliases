@@ -1,12 +1,14 @@
-# Cursor
-alias cursor="~/Applications/cursor/squashfs-root/AppRun"
-
 # Unix
 alias mkdir="mkdir -p"
 
-# NodeJS vidToGif
-alias togif="node ~/Dev/video-to-gif/run.js"
+# NodeJS vidToGif Script
+alias v2g="node ~/Dev/video-to-gif/run.js"
 
 # Python3
 alias py3="python3"
 alias p3="pip3"
+
+alias pn="pnpm"
+
+# Supabase
+alias supabase="pnpm dlx supabase@latest"
