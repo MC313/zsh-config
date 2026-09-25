@@ -21,6 +21,7 @@ source ~/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source ~/.zsh/plugins/pnpm-auto-use.plugin.zsh
 fpath=(~/.zsh/plugins/zsh-completions/src $fpath)
 fpath=(~/.config/hcloud/completion/zsh $fpath)
+fpath=(~/.config/tailscale/completion/zsh $fpath)
 autoload -Uz compinit; compinit; _comp_options+=(globdots)
 autoload -U +X bashcompinit && bashcompinit
 
