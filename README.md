@@ -48,23 +48,73 @@ The Zsh plugins are managed as git submodules. To update them:
 When you run the install script, the following will be set up:
 
 1. Zsh configuration:
-   - `.zshrc` file
-   - `.zsh_aliases` file
+   - `.zshenv` - Environment variables and PATH configuration
+   - `.zshrc` - Interactive shell settings
+   - `.zprofile` - Login shell configuration
+   - `.zsh_aliases` - Command aliases
    - Zsh plugins:
+     - zsh-nvm (with lazy loading)
      - zsh-autosuggestions
      - fast-syntax-highlighting
      - zsh-completions
 
-2. Starship prompt
+2. PATH configuration:
+   - `~/.opencode/bin`
+   - `~/.local/bin`
+   - `~/Library/pnpm` (macOS) for pnpm global packages
+   - `/usr/local/go/bin` and `$GOPATH/bin` for Go
+   - Node version management via nvm
 
-3. Git configuration
+3. pnpm configuration:
+   - Sets home directory to `~/Library/pnpm` (macOS) or `~/.local/share/pnpm` (Linux)
+   - Configures global bin directory
+   - Fixes permissions if needed
 
-4. Any other dotfiles specified in the `install.conf.yaml` file
+4. Starship prompt
+
+5. Git configuration (sensible defaults + preferences + aliases)
+
+6. Any other dotfiles specified in the `install.conf.yaml` file
 
 ## Customization
 
 You can customize the setup by modifying the `install.conf.yaml` file. This file specifies which dotfiles should be linked and where they should be linked to.
 
+## Troubleshooting
+
+### pnpm global bin directory not in PATH
+
+If you see: `ERROR The configured global bin directory "/Users/username/Library/pnpm" is not in PATH`
+
+**Solution:**
+1. Reload your shell environment:
+   ```bash
+   source ~/.zshenv
+   ```
+
+2. Verify pnpm is in PATH:
+   ```bash
+   echo $PATH | grep pnpm
+   ```
+
+3. If still not working, run the install script again to reconfigure pnpm:
+   ```bash
+   ./install
+   ```
+
+### pnpm requires sudo for global installs
+
+If you need `sudo` to install packages globally, it means pnpm files are owned by root.
+
+**Solution:** Fix ownership of pnpm directory (one-time fix):
+```bash
+sudo chown -R "$(whoami):$(id -gn)" ~/Library/pnpm
+```
+
+After this, global installs will work without sudo:
+```bash
+pnpm add -g <package>  # No sudo needed
+```
 ## Note
 
 Make sure to review and adjust any personal information or paths in the dotfiles before using this setup on a new system.

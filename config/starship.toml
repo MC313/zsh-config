@@ -4,6 +4,15 @@
 # Inserts a blank line between shell prompts
 add_newline = true
 
+# External commands occasionally exceed Starship's 500 ms default during
+# concurrent prompt evaluation. Keep the prompt bounded while allowing normal
+# Git and runtime detection to finish under transient macOS load.
+command_timeout = 2000
+
+# Keep Git identity together: directory, branch, then hosting provider. `$all`
+# renders the remaining standard modules without duplicating explicit ones.
+format = '$directory$git_branch${custom.git_provider}$all$character'
+
 # Replace the '❯' symbol in the prompt with '➜'
 [character] # The name of the module we are configuring is 'character'
 success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set to '➜' with the color 'bold green'
@@ -11,3 +20,35 @@ success_symbol = '[➜](bold green)' # The 'success_symbol' segment is being set
 # Disable the package module, hiding it from the prompt completely
 [package]
 disabled = true
+
+# Keep the complete working path visible, including the path before a Git
+# repository root (for example: ~/Dev/alv/admin-api).
+[directory]
+truncate_to_repo = false
+truncation_length = 0
+
+# Show the Git hosting provider for repositories under ~/Dev. The repository's
+# origin remote is the source of truth, which supports nested repositories and
+# Git worktrees without relying on their directory names.
+[custom.git_provider]
+command = '''
+case "$PWD/" in
+  "$HOME/Dev/"*) ;;
+  *) exit 0 ;;
+esac
+
+origin="$(git remote get-url origin 2>/dev/null)" || exit 0
+
+case "$origin" in
+  gh-work:*|git@gh-work:*|ssh://git@gh-work/*|git@github.com:*|ssh://git@github.com/*|https://github.com/*|http://github.com/*)
+    printf ''
+    ;;
+  azure:*|git@azure:*|ssh://git@azure/*|git@ssh.dev.azure.com:*|ssh://git@ssh.dev.azure.com/*|https://dev.azure.com/*|https://*.visualstudio.com/*)
+    printf '󰠅'
+    ;;
+esac
+'''
+when = true
+require_repo = true
+format = '[$output]($style) '
+style = 'bold purple'

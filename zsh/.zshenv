@@ -7,7 +7,7 @@ typeset -gT PATH path
 ### 2. Shell Environment
 export ZDOTDIR="$HOME/.zsh"
 export AWS_PROFILE="default"
-export STARSHIP_CONFIG="$HOME/.config/starship.toml"
+export STARSHIP_CONFIG="${STARSHIP_CONFIG:-$ZDOTDIR/.config/starship.toml}"
 
 # Prefer IPv4 so Node does not hang on unreachable IPv6
 case ":${NODE_OPTIONS:-}:" in
@@ -22,16 +22,18 @@ cdpath=(~/Dev .)
 ### 4. Path Management
 # We use the lowercase 'path' array for better readability.
 # The order here is: First listed = Highest priority.
-# pnpm shims live in $PNPM_HOME/bin, not $PNPM_HOME itself.
-export PNPM_HOME="$HOME/.local/share/pnpm"
+# pnpm uses the platform's conventional data directory. The installer sets
+# global-bin-dir to this same directory, so it belongs directly on PATH.
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    export PNPM_HOME="$HOME/Library/pnpm"
+else
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+fi
 path=(
     "$HOME/.opencode/bin"
     "$HOME/.local/bin"
     "/usr/local/go/bin"
-    "$PNPM_HOME/bin"
+    "$HOME/go/bin"
+    "$PNPM_HOME"
     $path
 )
-
-# Optional: If you use GOLANG, it's good practice to set GOPATH
-# export GOPATH="$HOME/go"
-# path=("$GOPATH/bin" $path)

@@ -50,12 +50,68 @@
             fi
         fi
 
+    - description: Fixing pnpm directory permissions
+      command: |
+        if [ "$(uname -s)" = "Darwin" ]; then
+            PNPM_HOME="$HOME/Library/pnpm"
+        else
+            PNPM_HOME="$HOME/.local/share/pnpm"
+        fi
+
+        # Check if pnpm directory exists and has wrong ownership
+        if [ -d "$PNPM_HOME" ]; then
+            if [ "$(uname -s)" = "Darwin" ]; then
+                OWNER=$(stat -f '%Su' "$PNPM_HOME" 2>/dev/null)
+            else
+                OWNER=$(stat -c '%U' "$PNPM_HOME" 2>/dev/null)
+            fi
+
+            if [ "$OWNER" = "root" ]; then
+                echo "Fixing ownership on $PNPM_HOME (requires password)..."
+                sudo chown -R "$(whoami):$(id -gn)" "$PNPM_HOME"
+                sudo chmod -R u+rwx "$PNPM_HOME"
+                echo "✓ Fixed pnpm directory ownership"
+            fi
+        else
+            # Create directory with correct permissions if it doesn't exist
+            mkdir -p "$PNPM_HOME"
+            echo "✓ Created pnpm directory with user ownership"
+        fi
+      stdout: true
+
     - description: Installing submodules
       command: git submodule update --init --recursive
       stdout: true
 
     - description: Installing starship
       command: curl -fsSL https://starship.rs/install.sh | sh
+      stdout: true
+
+    - description: Configuring pnpm home directory
+      command: |
+        if command -v pnpm >/dev/null 2>&1; then
+            if [ "$(uname -s)" = "Darwin" ]; then
+                PNPM_HOME="$HOME/Library/pnpm"
+            else
+                PNPM_HOME="$HOME/.local/share/pnpm"
+            fi
+            pnpm config set home-dir "$PNPM_HOME"
+            pnpm config set global-bin-dir "$PNPM_HOME"
+            echo "pnpm home directory set to: $PNPM_HOME"
+            echo "pnpm global bin directory set to: $PNPM_HOME"
+
+            # Clean up global package.json if it exists with empty/invalid entries
+            GLOBAL_PKG="$PNPM_HOME/global/5/package.json"
+            if [ -f "$GLOBAL_PKG" ]; then
+                # Check for invalid selectors and clean them up
+                if grep -q '@[^/]*"' "$GLOBAL_PKG" 2>/dev/null; then
+                    echo "Warning: Found potentially invalid package selectors in global config"
+                    echo "Run 'pnpm list -g' to verify global packages"
+                fi
+            fi
+        else
+            echo "pnpm not found, skipping configuration"
+        fi
       stdout: true
 
     - description: Configuring Git - Sensible Defaults
@@ -90,3 +146,4 @@
     - description: Configuring Git - Aliases
       command: |
         git config --global alias.fpush "push --force-with-lease"
+        git config --global alias.dtb "git difftool"
