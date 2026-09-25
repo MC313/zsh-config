@@ -51,7 +51,6 @@ When you run the install script, the following will be set up:
    - `.zshrc` file
    - `.zsh_aliases` file
    - Zsh plugins:
-     - zsh-auto-pnpm-use
      - zsh-autosuggestions
      - fast-syntax-highlighting
      - zsh-completions
