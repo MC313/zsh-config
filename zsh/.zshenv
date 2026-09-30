@@ -22,18 +22,22 @@ cdpath=(~/Dev .)
 ### 4. Path Management
 # We use the lowercase 'path' array for better readability.
 # The order here is: First listed = Highest priority.
-# pnpm uses the platform's conventional data directory. The installer sets
-# global-bin-dir to this same directory, so it belongs directly on PATH.
+# pnpm uses the platform's conventional data directory. PNPM_BIN_DIR is the
+# platform-specific location for global executables and is added to PATH.
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export PNPM_HOME="$HOME/Library/pnpm"
+    export PNPM_BIN_DIR="$PNPM_HOME"
 else
     export PNPM_HOME="$HOME/.local/share/pnpm"
+    # Preserve the existing Ubuntu layout, where pnpm's global executables
+    # live in the bin/ subdirectory.
+    export PNPM_BIN_DIR="$PNPM_HOME/bin"
 fi
 path=(
     "$HOME/.opencode/bin"
     "$HOME/.local/bin"
     "/usr/local/go/bin"
     "$HOME/go/bin"
-    "$PNPM_HOME"
+    "$PNPM_BIN_DIR"
     $path
 )

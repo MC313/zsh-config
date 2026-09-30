@@ -61,8 +61,9 @@ When you run the install script, the following will be set up:
 2. PATH configuration:
    - `~/.opencode/bin`
    - `~/.local/bin`
-   - `~/Library/pnpm` (macOS) for pnpm global packages
-   - `/usr/local/go/bin` and `$GOPATH/bin` for Go
+   - `~/Library/pnpm` (macOS) for pnpm global executables
+   - `~/.local/share/pnpm/bin` (Linux) for pnpm global executables
+   - `/usr/local/go/bin` and `~/go/bin` for Go
    - Node version management via nvm
 
 3. pnpm configuration:
@@ -75,6 +76,18 @@ When you run the install script, the following will be set up:
 5. Git configuration (sensible defaults + preferences + aliases)
 
 6. Any other dotfiles specified in the `install.conf.yaml` file
+
+## Platform-specific settings
+
+Shared Zsh settings live in `zsh/.zshrc` and `zsh/.zshenv`. Platform-specific
+setup is selected using Zsh's `OSTYPE` value:
+
+- macOS loads Homebrew and OrbStack setup from `.zprofile` and uses
+  `~/Library/pnpm` for pnpm.
+- Linux keeps pnpm global executables in `~/.local/share/pnpm/bin` and enables
+  the pnpm Node-version helper. It does not run the macOS Homebrew or OrbStack
+  setup.
+- Both platforms use the shared nvm configuration and common shell plugins.
 
 ## Customization
 

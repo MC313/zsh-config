@@ -95,10 +95,17 @@
             else
                 PNPM_HOME="$HOME/.local/share/pnpm"
             fi
+            if [ "$(uname -s)" = "Darwin" ]; then
+                PNPM_BIN_DIR="$PNPM_HOME"
+            else
+                # Preserve Ubuntu's existing ~/.local/share/pnpm/bin layout.
+                PNPM_BIN_DIR="$PNPM_HOME/bin"
+            fi
+            mkdir -p "$PNPM_BIN_DIR"
             pnpm config set home-dir "$PNPM_HOME"
-            pnpm config set global-bin-dir "$PNPM_HOME"
+            pnpm config set global-bin-dir "$PNPM_BIN_DIR"
             echo "pnpm home directory set to: $PNPM_HOME"
-            echo "pnpm global bin directory set to: $PNPM_HOME"
+            echo "pnpm global bin directory set to: $PNPM_BIN_DIR"
 
             # Clean up global package.json if it exists with empty/invalid entries
             GLOBAL_PKG="$PNPM_HOME/global/5/package.json"

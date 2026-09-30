@@ -28,52 +28,59 @@ compinit
 _comp_options+=(globdots)
 autoload -U +X bashcompinit && bashcompinit
 
-# Load zsh-nvm early so node/npm are available for other plugins. These modes
-# must be configured before sourcing the plugin.
-export NVM_LAZY_LOAD=true
-export NVM_AUTO_USE=true
-source "$ZDOTDIR/plugins/zsh-nvm/zsh-nvm.plugin.zsh"
+# Use the lazy-loading plugin when installed. Until submodules are initialized,
+# retain the local nvm installation behavior from the Ubuntu config.
+export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+if [[ -r "$ZDOTDIR/plugins/zsh-nvm/zsh-nvm.plugin.zsh" ]]; then
+  # These modes must be configured before sourcing the plugin.
+  export NVM_LAZY_LOAD=true
+  export NVM_AUTO_USE=true
+  source "$ZDOTDIR/plugins/zsh-nvm/zsh-nvm.plugin.zsh"
 
-# Ensure nvm is loaded for auto-use when lazy loading is enabled
-# Only auto-use when a .nvmrc exists to avoid slow chpwd on every cd
-if [[ "$NVM_LAZY_LOAD" == true ]] && [[ "$NVM_AUTO_USE" == true ]]; then
-  typeset -g NVM_AUTO_USE_LAST_NVMRC=""
-  typeset -g NVM_AUTO_USE_LAST_VERSION=""
+  # Only auto-use when a .nvmrc exists to avoid slow chpwd on every cd.
+  if [[ "$NVM_LAZY_LOAD" == true ]] && [[ "$NVM_AUTO_USE" == true ]] && (( $+functions[_zsh_nvm_auto_use] )); then
+    autoload -Uz add-zsh-hook
+    typeset -g NVM_AUTO_USE_LAST_NVMRC=""
+    typeset -g NVM_AUTO_USE_LAST_VERSION=""
 
-  _nvmrc_path() {
-    local dir="$PWD"
-    while [[ "$dir" != "/" ]]; do
-      if [[ -f "$dir/.nvmrc" ]]; then
-        print -r -- "$dir/.nvmrc"
+    _nvmrc_path() {
+      local dir="$PWD"
+      while [[ "$dir" != "/" ]]; do
+        if [[ -f "$dir/.nvmrc" ]]; then
+          print -r -- "$dir/.nvmrc"
+          return 0
+        fi
+        dir="${dir:h}"
+      done
+      return 1
+    }
+
+    _zsh_nvm_auto_use_wrapper() {
+      local nvmrc_path
+      nvmrc_path="$(_nvmrc_path)" || return 0
+      local nvmrc_version
+      nvmrc_version="$(< "$nvmrc_path")"
+      [[ -z "$nvmrc_version" ]] && return 0
+
+      if [[ "$NVM_AUTO_USE_LAST_NVMRC" == "$nvmrc_path" ]] && [[ "$NVM_AUTO_USE_LAST_VERSION" == "$nvmrc_version" ]]; then
         return 0
       fi
-      dir="${dir:h}"
-    done
-    return 1
-  }
 
-  _zsh_nvm_auto_use_wrapper() {
-    local nvmrc_path
-    nvmrc_path="$(_nvmrc_path)" || return 0
-    local nvmrc_version
-    nvmrc_version="$(< "$nvmrc_path")"
-    [[ -z "$nvmrc_version" ]] && return 0
+      if ! type nvm_find_nvmrc > /dev/null 2>&1; then
+        [[ -f "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh" --no-use
+      fi
+      _zsh_nvm_auto_use
+      NVM_AUTO_USE_LAST_NVMRC="$nvmrc_path"
+      NVM_AUTO_USE_LAST_VERSION="$nvmrc_version"
+    }
 
-    if [[ "$NVM_AUTO_USE_LAST_NVMRC" == "$nvmrc_path" ]] && [[ "$NVM_AUTO_USE_LAST_VERSION" == "$nvmrc_version" ]]; then
-      return 0
-    fi
-
-    if ! type nvm_find_nvmrc > /dev/null 2>&1; then
-      [[ -f "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh" --no-use
-    fi
-    _zsh_nvm_auto_use
-    NVM_AUTO_USE_LAST_NVMRC="$nvmrc_path"
-    NVM_AUTO_USE_LAST_VERSION="$nvmrc_version"
-  }
-
-  add-zsh-hook -d chpwd _zsh_nvm_auto_use
-  add-zsh-hook chpwd _zsh_nvm_auto_use_wrapper
-  _zsh_nvm_auto_use_wrapper
+    add-zsh-hook -d chpwd _zsh_nvm_auto_use
+    add-zsh-hook chpwd _zsh_nvm_auto_use_wrapper
+    _zsh_nvm_auto_use_wrapper
+  fi
+elif [[ -s "$NVM_DIR/nvm.sh" ]]; then
+  source "$NVM_DIR/nvm.sh"
+  [[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
 fi
 
 # Load other plugins
