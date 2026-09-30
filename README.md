@@ -26,7 +26,9 @@ The main purpose of this project is to:
    - Execute Dotbot to symlink configuration files
    - Install Zsh if not already installed
    - Set Zsh as the default shell
-   - Install Starship prompt
+    - Install nvm and Node.js LTS when no nvm-managed Node version exists
+    - Install Starship prompt
+    - Install pnpm if missing and configure its home and global bin directories
 
 ## Updating Zsh Plugins
 
@@ -66,16 +68,26 @@ When you run the install script, the following will be set up:
    - `/usr/local/go/bin` and `~/go/bin` for Go
    - Node version management via nvm
 
-3. pnpm configuration:
-   - Sets home directory to `~/Library/pnpm` (macOS) or `~/.local/share/pnpm` (Linux)
-   - Configures global bin directory
-   - Fixes permissions if needed
+3. Node.js setup:
+    - Installs nvm in `~/.nvm` (or an explicitly configured `NVM_DIR`) if missing
+    - Installs Node.js LTS when no nvm-managed Node version is installed
+    - Preserves existing nvm-managed versions and a working default alias
+    - Sets a missing or broken default alias to the newest installed version
+    - Project-specific versions remain controlled by `.nvmrc`
 
-4. Starship prompt
+4. pnpm configuration:
+    - Installs standalone pnpm when missing; no preinstalled Node.js is required
+    - Reuses existing pnpm installations, including those in its home directory
+    - Sets home directory to `~/Library/pnpm` (macOS) or `~/.local/share/pnpm` (Linux)
+    - Configures global bin directory
+    - Fixes permissions if needed
+    - Supports pnpm executables in both the home directory and its `bin/` subdirectory
 
-5. Git configuration (sensible defaults + preferences + aliases)
+5. Starship prompt
 
-6. Any other dotfiles specified in the `install.conf.yaml` file
+6. Git configuration (sensible defaults + preferences + aliases)
+
+7. Any other dotfiles specified in the `install.conf.yaml` file
 
 ## Platform-specific settings
 

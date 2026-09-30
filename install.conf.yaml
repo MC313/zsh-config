@@ -83,27 +83,52 @@
       command: git submodule update --init --recursive
       stdout: true
 
+    - description: Installing nvm and Node.js
+      command: bash scripts/install-node.sh
+      stdout: true
+      stderr: true
+
     - description: Installing starship
       command: curl -fsSL https://starship.rs/install.sh | sh
       stdout: true
 
-    - description: Configuring pnpm home directory
+    - description: Installing and configuring pnpm
       command: |
+        set -e
+        if [ "$(uname -s)" = "Darwin" ]; then
+            PNPM_HOME="$HOME/Library/pnpm"
+            PNPM_BIN_DIR="$PNPM_HOME"
+        else
+            PNPM_HOME="$HOME/.local/share/pnpm"
+            # Preserve Ubuntu's existing ~/.local/share/pnpm/bin layout.
+            PNPM_BIN_DIR="$PNPM_HOME/bin"
+        fi
+        export PNPM_HOME
+        # Support both standalone pnpm layouts, including an existing install
+        # that is not yet on the current shell's PATH.
+        export PATH="$PNPM_HOME/bin:$PNPM_HOME:$PATH"
+
+        if ! command -v pnpm >/dev/null 2>&1; then
+            echo "Installing standalone pnpm (no existing Node.js required)..."
+            INSTALL_DIR=$(mktemp -d)
+            trap 'rm -rf "$INSTALL_DIR"' EXIT
+            curl -fsSL https://get.pnpm.io/install.sh -o "$INSTALL_DIR/install.sh"
+            # Let pnpm setup write to a temporary shell rc file: this repo
+            # already manages PATH, so it need not edit our linked dotfiles.
+            touch "$INSTALL_DIR/shellrc"
+            ENV="$INSTALL_DIR/shellrc" SHELL=/bin/sh sh "$INSTALL_DIR/install.sh"
+        fi
+
         if command -v pnpm >/dev/null 2>&1; then
-            if [ "$(uname -s)" = "Darwin" ]; then
-                PNPM_HOME="$HOME/Library/pnpm"
-            else
-                PNPM_HOME="$HOME/.local/share/pnpm"
-            fi
-            if [ "$(uname -s)" = "Darwin" ]; then
-                PNPM_BIN_DIR="$PNPM_HOME"
-            else
-                # Preserve Ubuntu's existing ~/.local/share/pnpm/bin layout.
-                PNPM_BIN_DIR="$PNPM_HOME/bin"
-            fi
             mkdir -p "$PNPM_BIN_DIR"
-            pnpm config set home-dir "$PNPM_HOME"
-            pnpm config set global-bin-dir "$PNPM_BIN_DIR"
+            # PNPM_HOME sets the home directory; newer pnpm versions no longer
+            # accept the old home-dir configuration key.
+            PNPM_MAJOR=$(pnpm --version | cut -d. -f1)
+            if [ "$PNPM_MAJOR" -ge 11 ]; then
+                pnpm config set --global globalBinDir "$PNPM_BIN_DIR"
+            else
+                pnpm config set --global global-bin-dir "$PNPM_BIN_DIR"
+            fi
             echo "pnpm home directory set to: $PNPM_HOME"
             echo "pnpm global bin directory set to: $PNPM_BIN_DIR"
 
@@ -117,7 +142,8 @@
                 fi
             fi
         else
-            echo "pnpm not found, skipping configuration"
+            echo "pnpm installation completed but pnpm is not available on PATH" >&2
+            exit 1
         fi
       stdout: true
 

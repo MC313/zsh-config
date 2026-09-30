@@ -39,5 +39,7 @@ path=(
     "/usr/local/go/bin"
     "$HOME/go/bin"
     "$PNPM_BIN_DIR"
+    "$PNPM_HOME/bin"
+    "$PNPM_HOME"
     $path
 )
