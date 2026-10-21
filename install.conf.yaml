@@ -180,3 +180,7 @@
       command: |
         git config --global alias.fpush "push --force-with-lease"
         git config --global alias.dtb "git difftool"
+
+    - description: Installing global git hooks (main-push guard)
+      command: bash scripts/install-git-hooks.sh
+      stdout: true

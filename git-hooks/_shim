@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# Global git hook shim.
+#
+# Installed as every hook name via symlink (see scripts/install-git-hooks.sh)
+# and reached through:  git config --global core.hooksPath ~/.config/git/hooks
+#
+# Why a shim: core.hooksPath *replaces* each repo's hooks directory, so a repo's
+# own hooks (lefthook, husky, ...) would silently stop running. This shim
+# restores that by chaining to <git-dir>/hooks/<name>, and adds one policy: on
+# pre-push, never push directly to `main` — redirect the commit to an
+# auto/<slug>-<sha> branch instead.
+#
+# Bypass a single push:  git push --no-verify   (or MAIN_PUSH_GUARD_ALLOW=1)
+set -uo pipefail
+
+name="${0##*/}"
+
+# Buffer stdin: git feeds refs/files here and both the guard and the chained
+# hook need to see it.
+stdin_data=""
+if [ ! -t 0 ]; then
+  stdin_data="$(cat)"
+fi
+
+# --- policy: main is PR-only (pre-push only) --------------------------------
+if [ "$name" = "pre-push" ] && [ -z "${MAIN_PUSH_GUARD:-}" ] && [ -z "${MAIN_PUSH_GUARD_ALLOW:-}" ]; then
+  remote="${1:-origin}"
+  main_sha=""
+  while read -r _ local_sha remote_ref _; do
+    [ "${remote_ref:-}" = "refs/heads/main" ] && main_sha="$local_sha"
+  done <<<"$stdin_data"
+
+  if [ -n "$main_sha" ]; then
+    if printf '%s' "$main_sha" | grep -Eq '^0+$'; then
+      echo "guard: refusing to delete 'main'." >&2
+      exit 1
+    fi
+    slug="$(git log -1 --format=%s "$main_sha" 2>/dev/null \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//' \
+      | cut -c1-48)"
+    [ -n "$slug" ] || slug=update
+    short="$(git rev-parse --short "$main_sha")"
+    branch="auto/${slug}-${short}"
+    if git show-ref --verify --quiet "refs/heads/${branch}"; then
+      branch="${branch}-$(date +%Y%m%d-%H%M%S)"
+    fi
+    {
+      echo "────────────────────────────────────────────────────────────"
+      echo "guard: main is PR-only — not pushing to it directly."
+      echo "guard: pushing ${short} to a feature branch instead:"
+      echo "guard:   ${branch}"
+      echo "────────────────────────────────────────────────────────────"
+    } >&2
+    MAIN_PUSH_GUARD=1 git push --no-verify "$remote" "${main_sha}:refs/heads/${branch}"
+    {
+      echo
+      echo "guard: pushed. Open a PR:"
+      echo "guard:   gh pr create --base main --head ${branch} --fill"
+    } >&2
+    exit 1
+  fi
+fi
+
+# --- chain to the repo's own hook, if any -----------------------------------
+gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
+if [ -n "$gitdir" ] && [ -x "${gitdir}/hooks/${name}" ]; then
+  printf '%s' "$stdin_data" | "${gitdir}/hooks/${name}" "$@"
+  exit $?
+fi
+
+# No repo-local hook: fall back to lefthook when the repo uses it (works even
+# without `lefthook install`, which refuses under a custom core.hooksPath).
+if [ -f lefthook.yml ] || [ -f lefthook.yaml ] || [ -f .lefthook.yml ] || [ -f .lefthook.yaml ]; then
+  if command -v lefthook >/dev/null 2>&1; then
+    printf '%s' "$stdin_data" | lefthook run "$name" --no-auto-install
+    exit $?
+  fi
+fi
+
+exit 0
