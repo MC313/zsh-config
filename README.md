@@ -87,7 +87,26 @@ When you run the install script, the following will be set up:
 
 6. Git configuration (sensible defaults + preferences + aliases)
 
-7. Any other dotfiles specified in the `install.conf.yaml` file
+7. Global git hooks (main-push guard + per-repo hook chaining — see below)
+
+8. Any other dotfiles specified in the `install.conf.yaml` file
+
+## Global git hooks
+
+`scripts/install-git-hooks.sh` installs a single shim (`git-hooks/_shim`)
+symlinked under every git hook name, and points `core.hooksPath` at it:
+
+- **Keeps `main` PR-only.** A `pre-push` guard refuses a direct push to `main`
+  and instead pushes the commit to a fresh `auto/<slug>-<sha>` branch, then
+  prints the `gh pr create` command. Bypass one push with `git push --no-verify`
+  (or `MAIN_PUSH_GUARD_ALLOW=1`).
+- **Chains to each repo's own hooks.** Because `core.hooksPath` *replaces* the
+  per-repo hooks directory, the shim re-runs `<git-dir>/hooks/<name>` so lefthook,
+  husky, etc. keep working. A repo with a `lefthook.yml` but no installed hook
+  falls back to `lefthook run <hook>`.
+
+Because a custom `core.hooksPath` is set, `lefthook install` refuses to run —
+it is not needed here, and `lefthook install --force` would overwrite the shim.
 
 ## Platform-specific settings
 
