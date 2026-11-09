@@ -7,24 +7,76 @@
 #
 # Why a shim: core.hooksPath *replaces* each repo's hooks directory, so a repo's
 # own hooks (lefthook, husky, ...) would silently stop running. This shim
-# restores that by chaining to <git-dir>/hooks/<name>, and adds one policy: on
-# pre-push, never push directly to `main` — redirect the commit to an
-# auto/<slug>-<sha> branch instead.
+# restores that by chaining to <git-dir>/hooks/<name>, or to `lefthook run`.
+#
+# Policy ownership, in one rule: a repo that ships its own guard
+# (`.lefthook/pre-push/guard-main-push.sh` or `scripts/ci/guard-main-push.sh`)
+# is authoritative for pre-push; this shim only delegates. Every other repo
+# gets the blanket fallback below — main is PR-only, and a push to it is
+# redirected to an auto/<slug>-<sha> branch.
 #
 # Bypass a single push:  git push --no-verify   (or MAIN_PUSH_GUARD_ALLOW=1)
 set -uo pipefail
 
 name="${0##*/}"
 
-# Buffer stdin: git feeds refs/files here and both the guard and the chained
-# hook need to see it.
+# Buffer stdin: git feeds refs/files here, and both the repo hook and the
+# fallback policy need to see it.
 stdin_data=""
 if [ ! -t 0 ]; then
   stdin_data="$(cat)"
 fi
 
-# --- policy: main is PR-only (pre-push only) --------------------------------
-if [ "$name" = "pre-push" ] && [ -z "${MAIN_PUSH_GUARD:-}" ] && [ -z "${MAIN_PUSH_GUARD_ALLOW:-}" ]; then
+# Returns 127 when the repo has no hook to run.
+run_repo_hook() {
+  local gitdir
+  gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
+  if [ -n "$gitdir" ] && [ -x "${gitdir}/hooks/${name}" ]; then
+    printf '%s\n' "$stdin_data" | "${gitdir}/hooks/${name}" "$@"
+    return $?
+  fi
+  if [ -f lefthook.yml ] || [ -f lefthook.yaml ] || [ -f .lefthook.yml ] || [ -f .lefthook.yaml ]; then
+    if command -v lefthook >/dev/null 2>&1; then
+      printf '%s\n' "$stdin_data" | lefthook run "$name" --no-auto-install
+      return $?
+    fi
+  fi
+  return 127
+}
+
+repo_owns_guard() {
+  [ -f ".lefthook/pre-push/guard-main-push.sh" ] || [ -f "scripts/ci/guard-main-push.sh" ]
+}
+
+if [ "$name" != "pre-push" ]; then
+  run_repo_hook "$@"
+  rc=$?
+  [ "$rc" -eq 127 ] && exit 0
+  exit "$rc"
+fi
+
+# lefthook does not forward git's positional args, so carry the remote across
+# the boundary in the environment; the guard reads MAIN_PUSH_REMOTE first.
+MAIN_PUSH_REMOTE="${1:-origin}"
+export MAIN_PUSH_REMOTE
+
+if repo_owns_guard; then
+  # The repo's guard is the single source of truth; do not second-guess it.
+  run_repo_hook "$@"
+  rc=$?
+  [ "$rc" -ne 127 ] && exit "$rc"
+  # Guard present but no runner (no lefthook binary): fall through rather
+  # than block every push.
+fi
+# Repo without its own guard: run whatever it has, then apply the fallback.
+run_repo_hook "$@"
+rc=$?
+if [ "$rc" -ne 127 ] && [ "$rc" -ne 0 ]; then
+  exit "$rc"
+fi
+
+# --- fallback policy: main is PR-only ---------------------------------------
+if [ -z "${MAIN_PUSH_GUARD:-}" ] && [ -z "${MAIN_PUSH_GUARD_ALLOW:-}" ]; then
   remote="${1:-origin}"
   main_sha=""
   while read -r _ local_sha remote_ref _; do
@@ -60,22 +112,6 @@ if [ "$name" = "pre-push" ] && [ -z "${MAIN_PUSH_GUARD:-}" ] && [ -z "${MAIN_PUS
       echo "guard:   gh pr create --base main --head ${branch} --fill"
     } >&2
     exit 1
-  fi
-fi
-
-# --- chain to the repo's own hook, if any -----------------------------------
-gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null || true)"
-if [ -n "$gitdir" ] && [ -x "${gitdir}/hooks/${name}" ]; then
-  printf '%s' "$stdin_data" | "${gitdir}/hooks/${name}" "$@"
-  exit $?
-fi
-
-# No repo-local hook: fall back to lefthook when the repo uses it (works even
-# without `lefthook install`, which refuses under a custom core.hooksPath).
-if [ -f lefthook.yml ] || [ -f lefthook.yaml ] || [ -f .lefthook.yml ] || [ -f .lefthook.yaml ]; then
-  if command -v lefthook >/dev/null 2>&1; then
-    printf '%s' "$stdin_data" | lefthook run "$name" --no-auto-install
-    exit $?
   fi
 fi
 
